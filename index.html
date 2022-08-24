@@ -1,0 +1,127 @@
+<!doctype html>
+<title>Basic Emulator</title><!-- not BASIC! -->
+
+<script src="./js/libv86.js"></script>
+<script src="./js/idb-storage.min.js"></script>
+<script>
+    "use strict";
+    const storage = idbStorage.createIDBStorage({name: "state-storage", conflicAction: "replace"});
+
+    var emulator;
+    window.onload = function () {
+        emulator = window.emulator = new V86Starter({
+            wasm_path: "../images/v86.wasm",
+            memory_size: 128 * 1024 * 1024,
+            vga_memory_size: 2 * 1024 * 1024,
+            screen_container: document.getElementById("screen_container"),
+            bios: {
+                url: "../images/seabios.bin",
+            },
+            vga_bios: {
+                url: "../images/vgabios.bin",
+            },
+            cdrom: {
+                url: "../images/v86-linux.iso",
+            },
+            autostart: true,
+        });
+
+        var state;
+
+        document.getElementById("save_restore").onclick = async function () {
+            var button = this;
+
+            if (state) {
+                button.value = "Save state";
+                await emulator.restore_state(state);
+                state = undefined;
+            } else {
+                const new_state = await emulator.save_state();
+                console.log("Saved state of " + new_state.byteLength + " bytes");
+                button.value = "Restore state";
+                state = new_state;
+            }
+
+            button.blur();
+        };
+
+        document.getElementById("save_file").onclick = async function () {
+            const new_state = await emulator.save_state();
+            var a = document.createElement("a");
+            a.download = "v86state.bin";
+            a.href = window.URL.createObjectURL(new Blob([new_state]));
+            a.dataset.downloadurl = "application/octet-stream:" + a.download + ":" + a.href;
+            a.click();
+
+            this.blur();
+        };
+
+        document.getElementById("restore_file").onchange = function () {
+            if (this.files.length) {
+                var filereader = new FileReader();
+                emulator.stop();
+
+                filereader.onload = async function (e) {
+                    await emulator.restore_state(e.target.result);
+                    emulator.run();
+                };
+
+                filereader.readAsArrayBuffer(this.files[0]);
+
+                this.value = "";
+            }
+
+            this.blur();
+        };
+
+        V86Starter.prototype.keyboard_send_text = function (string) {
+            for (var i = 0; i < string.length; i++) {
+                this.keyboard_adapter.simulate_char(string[i]);
+            }
+        };
+
+        emulator.save = async function() {
+            console.log('saving...');
+            await storage.delete('state');
+            const state = await emulator.save_state();
+            const meta = {};
+            const result = await storage.set('state', state, meta);
+            console.log('save result', result);
+        }
+
+        emulator.restore = async function() {
+            console.log('restoring...');
+            storage.get("state").then(function (state) {
+                if (state) {
+                    emulator.stop();
+                    emulator.restore_state(state).then(function(result) {
+                        console.log('restore result', result);
+                        emulator.run();
+                    }).catch(function(err) {
+                        console.log('restore error', err);
+                    });
+                }
+            });
+        }
+
+    }
+</script>
+
+<!-- A minimal structure for the ScreenAdapter defined in browser/screen.js -->
+<div id="screen_container">
+    <div style="white-space: pre; font: 20px monospace; line-height: 20px"></div>
+    <canvas style="display: none;"></canvas>
+</div>
+
+<hr>
+
+<input id="save_restore" type="button" value="Save state">
+<input id="save_file" type="button" value="Save state to file">
+Restore from file: <input id="restore_file" type="file">
+<br/>
+<button onclick="emulator.save()">Save to IndexedDB</button>&nbsp;&nbsp;
+<button onclick="emulator.restore()">Restore from IndexedDB</button>
+
+<br/><br/><br/>
+<textarea id="textarea" cols="80" rows="10"></textarea><br>
+<button onclick="emulator.keyboard_send_text(document.getElementById('textarea').value)">Send Text</button>
