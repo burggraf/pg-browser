@@ -80,9 +80,13 @@
             }
         };
 
+
+        emulator.clearState = async function () {
+            await storage.delete('state');
+        }
         emulator.save = async function() {
             console.log('saving...');
-            await storage.delete('state');
+            await emulator.clearState();
             const state = await emulator.save_state();
             const meta = {};
             const result = await storage.set('state', state, meta);
@@ -104,6 +108,10 @@
             });
         }
 
+        // setTimeout(function() {
+            emulator.restore();
+        // } , 1000);
+
     }
 </script>
 
@@ -120,7 +128,8 @@
 Restore from file: <input id="restore_file" type="file">
 <br/>
 <button onclick="emulator.save()">Save to IndexedDB</button>&nbsp;&nbsp;
-<button onclick="emulator.restore()">Restore from IndexedDB</button>
+<button onclick="emulator.restore()">Restore from IndexedDB</button>&nbsp;&nbsp;
+<button onclick="emulator.clearState()">Clear IndexedDB</button>
 
 <br/><br/><br/>
 <textarea id="textarea" cols="80" rows="10"></textarea><br>
