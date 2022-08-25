@@ -1,18 +1,23 @@
 <!doctype html>
-<title>Basic Emulator</title><!-- not BASIC! -->
+<title>PostgreSQL</title><!-- not BASIC! -->
 
 <script src="./js/libv86.js"></script>
 <script src="./js/idb-storage.min.js"></script>
 <script>
     "use strict";
     const storage = idbStorage.createIDBStorage({name: "state-storage", conflicAction: "replace"});
+    const config = {
+        font_size: 18,
+        memory_size: 128 * 1024 * 1024,
+        vga_memory_size: 2 * 1024 * 1024,
 
+    }
     var emulator;
     window.onload = function () {
         emulator = window.emulator = new V86Starter({
             wasm_path: "../images/v86.wasm",
-            memory_size: 128 * 1024 * 1024,
-            vga_memory_size: 2 * 1024 * 1024,
+            memory_size: config.memory_size,
+            vga_memory_size: config.memory_size,
             screen_container: document.getElementById("screen_container"),
             bios: {
                 url: "../images/seabios.bin.zst",
@@ -114,11 +119,16 @@
         } , 250);
 
     }
+    function updateFontSize() {
+        const newFontSize = document.getElementById("fontsize").value;
+        document.getElementById("text_container").style.fontSize = newFontSize + "px";
+        document.getElementById("text_container").style.lineHeight = newFontSize + "px";
+    }
 </script>
 
 <!-- A minimal structure for the ScreenAdapter defined in browser/screen.js -->
 <div id="screen_container">
-    <div style="white-space: pre; font: 20px monospace; line-height: 20px"></div>
+    <div id="text_container" style="white-space: pre; font: 18px monospace; line-height: 18px"></div>
     <canvas style="display: none;"></canvas>
 </div>
 
@@ -131,7 +141,8 @@ Restore from file: <input id="restore_file" type="file">
 <button onclick="emulator.save()">Save to IndexedDB</button>&nbsp;&nbsp;
 <button onclick="emulator.restore()">Restore from IndexedDB</button>&nbsp;&nbsp;
 <button onclick="emulator.clearState()">Clear IndexedDB</button>
-
+<br/>
+<input type="text" id="fontsize" value="18" min="4" max="40" style="width: 25px">&nbsp;&nbsp;<button onclick="updateFontSize()">Update font size</button>
 <br/><br/><br/>
 <textarea id="textarea" cols="80" rows="10"></textarea><br>
 <button onclick="emulator.keyboard_send_text(document.getElementById('textarea').value)">Send Text</button>
