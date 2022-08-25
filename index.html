@@ -8,16 +8,16 @@
     const storage = idbStorage.createIDBStorage({name: "state-storage", conflicAction: "replace"});
     const config = {
         font_size: 18,
-        memory_size: 128 * 1024 * 1024,
-        vga_memory_size: 2 * 1024 * 1024,
+        memory_size: 96,
+        vga_memory_size: 2,
 
     }
     var emulator;
     window.onload = function () {
         emulator = window.emulator = new V86Starter({
             wasm_path: "../images/v86.wasm",
-            memory_size: config.memory_size,
-            vga_memory_size: config.memory_size,
+            memory_size: config.memory_size * 1024 * 1024,
+            vga_memory_size: config.vga_memory_size * 1024 * 1024,
             screen_container: document.getElementById("screen_container"),
             bios: {
                 url: "../images/seabios.bin.zst",
