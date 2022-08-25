@@ -5,15 +5,21 @@
 <script src="./js/idb-storage.min.js"></script>
 <script>
     "use strict";
-    const storage = idbStorage.createIDBStorage({name: "state-storage", conflicAction: "replace"});
+    const storage = idbStorage.createIDBStorage({
+        name: "state-storage",
+        conflicAction: "replace"
+    });
     const config = {
         font_size: 18,
         memory_size: 96,
         vga_memory_size: 2,
-        initial_state: { url: "../images/pg-browser-state-96.bin.zst" },
+        initial_state: {
+            url: "../images/pg-browser-state-96.bin.zst"
+        },
     }
     var emulator;
-    window.onload = function () {
+
+    function setup_emulator() {
         console.log('loading emualtor');
         emulator = window.emulator = new V86Starter({
             wasm_path: "../images/v86.wasm",
@@ -58,7 +64,7 @@
         document.getElementById("save_file").onclick = async function () {
             const new_state = await emulator.save_state();
             var a = document.createElement("a");
-            a.download = "v86state.bin";
+            a.download = "pg-browser-state-" + config.memory_size + ".bin";
             a.href = window.URL.createObjectURL(new Blob([new_state]));
             a.dataset.downloadurl = "application/octet-stream:" + a.download + ":" + a.href;
             a.click();
@@ -94,7 +100,7 @@
         emulator.clearState = async function () {
             await storage.delete('state');
         }
-        emulator.save = async function() {
+        emulator.save = async function () {
             console.log('saving...');
             await emulator.clearState();
             const state = await emulator.save_state();
@@ -103,15 +109,15 @@
             console.log('save result', result);
         }
 
-        emulator.restore = async function() {
+        emulator.restore = async function () {
             console.log('restoring...');
             storage.get("state").then(function (state) {
                 if (state) {
                     emulator.stop();
-                    emulator.restore_state(state).then(function(result) {
+                    emulator.restore_state(state).then(function (result) {
                         console.log('restore result', result);
                         emulator.run();
-                    }).catch(function(err) {
+                    }).catch(function (err) {
                         console.log('restore error', err);
                     });
                 }
@@ -120,16 +126,42 @@
             });
         }
 
-        setTimeout(function() {
+    }
+    window.onload = function () {
+        setup_emulator();
+        setTimeout(function () {
             emulator.restore(); // restore from indexedDB storage
             console.log('done.. emulator', emulator);
-        } , 500);
+        }, 500);
 
     }
+
     function updateFontSize() {
         const newFontSize = document.getElementById("fontsize").value;
         document.getElementById("text_container").style.fontSize = newFontSize + "px";
         document.getElementById("text_container").style.lineHeight = newFontSize + "px";
+    }
+
+    function updateMemorySize() {
+        const fullboot = document.getElementById("fullboot").checked;
+        const newMemorySize = document.getElementById("memorysize").value;
+        console.log('new memory size', newMemorySize);
+        try {
+            config.memory_size = parseInt(newMemorySize, 10) || 96;
+            if (!config.memory_size || config.memory_size < 96) {
+                config.memory_size = 96;
+                document.getElementById("memorysize").value = config.memory_size;
+            }
+            if (fullboot) {
+                config.initial_state = null;
+            } else {
+                config.initial_state.url = "../images/pg-browser-state-" + config.memory_size + ".bin.zst";
+            }
+            emulator.stop();
+            setup_emulator();
+        } catch (e) {
+            console.log('updateMemorySize error', e);
+        }
     }
 </script>
 
@@ -144,12 +176,29 @@
 <input id="save_restore" type="button" value="Save state">
 <input id="save_file" type="button" value="Save state to file">
 Restore from file: <input id="restore_file" type="file">
-<br/>
+<br />
 <button onclick="emulator.save()">Save to IndexedDB</button>&nbsp;&nbsp;
 <button onclick="emulator.restore()">Restore from IndexedDB</button>&nbsp;&nbsp;
 <button onclick="emulator.clearState()">Clear IndexedDB</button>
-<br/>
-<input type="text" id="fontsize" value="18" min="4" max="40" style="width: 25px">&nbsp;&nbsp;<button onclick="updateFontSize()">Update font size</button>
-<br/><br/><br/>
+<br />
+<input type="text" id="fontsize" value="18" min="4" max="40" style="width: 25px">&nbsp;&nbsp;<button
+    onclick="updateFontSize()">Update font size</button>
+<br />
+memory (mb): <select name="memorysize" id="memorysize">
+    <option value="96">96</option>
+    <option value="128">128</option>
+    <option value="196">196</option>
+    <option value="256">256</option>
+    <option value="384">384</option>
+    <option value="512">512</option>
+    <option value="1024">1024</option>
+    <option value="2048">2048</option>
+    <option value="4096">4096</option>
+    <option value="8192">8192</option>
+</select>
+<!-- <input type="text" id="memorysize" value="96" min="96" max="8192" style="width: 35px">-->&nbsp;&nbsp;<button
+    onclick="updateMemorySize()">Update memory size</button>
+&nbsp;&nbsp;<input type="checkbox" id="fullboot" name="fullboot" value="true"> Full Boot
+<br /><br /><br />
 <textarea id="textarea" cols="80" rows="10"></textarea><br>
 <button onclick="emulator.keyboard_send_text(document.getElementById('textarea').value)">Send Text</button>
