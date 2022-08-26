@@ -25,6 +25,7 @@ docker run \
     -v $PWD/dist:/build \
     -v $PWD/buildroot-v86/:/buildroot-v86 \
     -ti \
+    --platform linux/amd64 \
     --entrypoint "bash" \
     buildroot
 ```
