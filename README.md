@@ -30,7 +30,8 @@ make menuconfig
 ```
 
 ...configure to include postgres
-
+Toolchain -> Enable WCHAR support
+Target Packages -> Libraries -> Database -> postgresql & postgresql-full
 
 ```
 make
