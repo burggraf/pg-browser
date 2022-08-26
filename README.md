@@ -22,16 +22,18 @@ docker run \
     buildroot
 ```
 
-inside vm:
+### inside vm:
 
 ```
 make BR2_EXTERNAL=/buildroot-v86 v86_defconfig
 make menuconfig
 ```
 
-...configure to include postgres
-Toolchain -> Enable WCHAR support
-Target Packages -> Libraries -> Database -> postgresql & postgresql-full
+### configure to include postgres
+
+- Toolchain -> Enable WCHAR support
+- Target Packages -> Libraries -> Database -> postgresql & postgresql-full
+- save configuration & exit
 
 ```
 make
