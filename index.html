@@ -195,6 +195,22 @@
             console.log('updateMemorySize error', e);
         }
     }
+    function sendText() {
+        let text = document.getElementById("textarea").value;
+        console.log('text is', text);
+        const arr = text.split("\n");
+        console.log('text array is', arr);
+        const processArray = () => {
+            if (arr.length === 0) {
+                return;
+            } else {
+                const line = arr.shift();
+                emulator.keyboard_send_text(line + "\n");
+                setTimeout(processArray, 200);
+            }
+        }
+        processArray();
+    }
 </script>
 
 <!-- A minimal structure for the ScreenAdapter defined in browser/screen.js -->
@@ -231,4 +247,4 @@ memory (mb): <select name="memorysize" id="memorysize">
 &nbsp;&nbsp;<input type="checkbox" id="fullboot" name="fullboot" value="true"> Full Boot
 <br /><br /><br />
 <textarea id="textarea" cols="80" rows="10"></textarea><br>
-<button onclick="emulator.keyboard_send_text(document.getElementById('textarea').value)">Send Text</button>
+<button onclick="sendText()">Send Text</button>
