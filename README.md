@@ -3,6 +3,13 @@ PostgreSQL.  In a browser.  FTW.
 
 ## build instructions (work in progress)
 
+### notes
+- At this time, postgres using the older buildroot release (the default setup for `browser-vm`)
+- Switching to the latest buildroot (**2022.05.1**) compiles the `v86-linux.iso` file and includes postgres, but postgres crashes with a segfault on startup
+- Additional changes may need to be made to the `buildroot-v86` folder before building this
+
+### build steps
+
 ```sh
 git clone https://github.com/humphd/browser-vm
 cd browser-vm
