@@ -137,12 +137,9 @@
         emulator.add_listener("download-progress", function(e)
         {
             console.log('*** download progress', e);
-            if (e.file_name.startsWith("../images/pg-browser-state")) {
-                const el = document.getElementById("progress");
-                const percent = (e.loaded / Math.max(e.total,1)) * 100;
-                // format percent with 2 decimal places
-                el.innerHTML = percent.toFixed(2) + "%";
-            }
+            const el = document.getElementById("progress");
+            const percent = (e.loaded / Math.max(e.total,1)) * 100;
+            el.innerHTML = e.file_name.replace("../images/","") + " " + percent.toFixed(2) + "%";
             /*
             file_count: 4
             file_index: 3
