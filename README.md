@@ -44,4 +44,5 @@ make menuconfig
 
 ```
 make
+make legal-info
 ```
