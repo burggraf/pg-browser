@@ -138,8 +138,12 @@
         {
             console.log('*** download progress', e);
             const el = document.getElementById("progress");
-            const percent = (e.loaded / Math.max(e.total,1)) * 100;
-            el.innerHTML = e.file_name.replace("../images/","") + " " + percent.toFixed(2) + "%";
+            if (e.loaded >= e.total) {
+                el.innerHTML = "";
+            } else {
+                const percent = (e.loaded / Math.max(e.total,1)) * 100;
+                el.innerHTML = "<h3>Loading: " + e.file_name.replace("../images/","") + " " + percent.toFixed(2) + "%</h3>";
+            }
             /*
             file_count: 4
             file_index: 3
@@ -194,7 +198,7 @@
 </script>
 
 <!-- A minimal structure for the ScreenAdapter defined in browser/screen.js -->
-<div>Progress: <span id="progress"></span></div>
+<div id="progress"></div>
 <div id="screen_container">
     <div id="text_container" style="white-space: pre; font: 18px monospace; line-height: 18px"></div>
     <canvas style="display: none;"></canvas>
