@@ -125,13 +125,44 @@
                 console.log('restore error', err);
             });
         }
+        emulator.add_listener("emulator-started", function() {
+            console.log('*** emulator started');
+        });
+        emulator.add_listener("emulator-stopped", function() {
+            console.log('*** emulator stopped');
+        });
+        emulator.add_listener("emulator-ready", function() {
+            console.log('*** emulator ready');
+        });
+        emulator.add_listener("download-progress", function(e)
+        {
+            console.log('*** download progress', e);
+            if (e.file_name.startsWith("../images/pg-browser-state")) {
+                const el = document.getElementById("progress");
+                const percent = (e.loaded / Math.max(e.total,1)) * 100;
+                // format percent with 2 decimal places
+                el.innerHTML = percent.toFixed(2) + "%";
+            }
+            /*
+            file_count: 4
+            file_index: 3
+            file_name: "../images/pg-browser-state-96.bin.zst"
+            lengthComputable: true
+            loaded: 24793069
+            total: 24793069
+            */
+        });  
+        emulator.add_listener("9p-attach", function()
+        {
+            console.log('*** 9p-attach');
+        });      
 
     }
     window.onload = function () {
         setup_emulator();
         setTimeout(function () {
             emulator.restore(); // restore from indexedDB storage
-            console.log('done.. emulator', emulator);
+            console.log('*** done restoring emulator', emulator);
         }, 500);
 
     }
@@ -166,6 +197,7 @@
 </script>
 
 <!-- A minimal structure for the ScreenAdapter defined in browser/screen.js -->
+<div>Progress: <span id="progress"></span></div>
 <div id="screen_container">
     <div id="text_container" style="white-space: pre; font: 18px monospace; line-height: 18px"></div>
     <canvas style="display: none;"></canvas>
