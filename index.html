@@ -1,9 +1,14 @@
 <!doctype html>
-<title>PostgreSQL</title><!-- not BASIC! -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+      content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      <title>PostgreSQL</title><!-- not BASIC! -->
 
-<link rel="stylesheet" href="v86.css">
-<script src="./js/libv86.js"></script>
-<script src="./js/idb-storage.min.js"></script>
+      <link rel="stylesheet" href="v86.css">
+      <script src="./js/libv86.js"></script>
+      <script src="./js/idb-storage.min.js"></script>
 <script>
     "use strict";
     const storage = idbStorage.createIDBStorage({
@@ -213,10 +218,11 @@
         processArray();
     }
 </script>
-
+</head>
+<body>
 <!-- A minimal structure for the ScreenAdapter defined in browser/screen.js -->
 <div id="progress"></div>
-<div id="screen_container">
+<div id="screen_container" style="width: 100%;">
     <div id="text_container" style="white-space: pre; font: 18px monospace; line-height: 18px"></div>
     <canvas style="display: none;"></canvas>
 </div>
@@ -247,9 +253,11 @@ memory (mb): <select name="memorysize" id="memorysize">
     <option value="1024">1024</option>
 </select>
 <!-- <input type="text" id="memorysize" value="96" min="96" max="8192" style="width: 35px">-->&nbsp;&nbsp;<button
-    onclick="updateMemorySize()">Update memory size</button>
+    onclick="updateMemorySize()">Reset</button>
 &nbsp;&nbsp;<input type="checkbox" id="fullboot" name="fullboot" value="true"> Full Boot
 <br />
 <textarea id="textarea" cols="55" rows="10" style="width: 100%"></textarea><br>
 <button onclick="sendText()">Send Text</button>
 </div>
+</body>
+</html>
