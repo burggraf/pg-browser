@@ -7,7 +7,7 @@
         content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>PostgreSQL</title><!-- not BASIC! -->
     
-    <link rel="stylesheet" href="https://unpkg.com/xterm@4.19.0/css/xterm.css" />
+    <!-- <link rel="stylesheet" href="https://unpkg.com/xterm@4.19.0/css/xterm.css" /> -->
     <script src="https://unpkg.com/xterm@4.19.0/lib/xterm.js"></script>
 
     <link rel="stylesheet" href="v86.css">
@@ -20,7 +20,7 @@
             conflicAction: "replace"
         });
         const config = {
-            font_size: 18,
+            font_size: 14,
             memory_size: 96,
             vga_memory_size: 2,
             initial_state: {
@@ -29,8 +29,10 @@
         }
         var emulator;
 
+        // this.serial_adapter = new SerialAdapterXtermJS(options["serial_container_xtermjs"], this.bus);
         function setup_emulator() {
             console.log('loading emualtor');
+            document.getElementById("terminal").innerHTML = "";
             emulator = window.emulator = new V86Starter({
                 wasm_path: "../images/v86.wasm",
                 memory_size: config.memory_size * 1024 * 1024,
@@ -53,8 +55,7 @@
                 disable_speaker: true,
                 network_relay_url: "wss://relay.widgetry.org/",
             });
-            console.log('emulator loaded', emulator);
-
+            console.log('*** emulator loaded', emulator);
             var state;
 
             // document.getElementById("save_restore").onclick = async function () {
@@ -145,12 +146,18 @@
                 console.log('*** emulator stopped');
             });
             emulator.add_listener("emulator-ready", function () {
+                console.log('********************************************************');
+                console.log('*** emulator ready', emulator);
+                console.log('********************************************************');
                 setTimeout(() => {
                     emulator.serial0_send('clear\n');
                     emulator.serial0_send('psql -U postgres\n');
                     emulator.serial_adapter.term.focus();
                 }, 500);
             });
+            // emulator.add_listener("serial0-output-char", async function(chr) {
+            //     console.log('serial0-output-char', chr);
+            // });
             emulator.add_listener("download-progress", function (e) {
                 console.log('*** download progress', e);
                 const el = document.getElementById("progress");
@@ -185,9 +192,18 @@
         }
 
         function updateFontSize() {
-            const newFontSize = document.getElementById("fontsize").value;
-            document.getElementById("text_container").style.fontSize = newFontSize + "px";
-            document.getElementById("text_container").style.lineHeight = newFontSize + "px";
+
+            //emulator.screen_adapter.set_size_text(document.getElementById("font_size").value, document.getElementById("font_size").value);
+            try {
+                config.font_size = parseInt(document.getElementById("fontsize").value,10) || 14;
+                if (config.font_size < 4 || config.font_size > 90) {
+                    config.font_size = 14;
+                }
+            } catch (err) {
+                console.log('error parsing font size', err);
+                config.font_size = 14;
+            }
+            emulator.serial_adapter.term.options.fontSize = config.font_size;
         }
 
         function updateMemorySize() {
@@ -206,6 +222,7 @@
                     config.initial_state.url = "../images/pg-browser-state-" + config.memory_size + ".bin.zst";
                 }
                 emulator.stop();
+                document.getElementById("screen_container").style.display = "block";
                 setup_emulator();
             } catch (e) {
                 console.log('updateMemorySize error', e);
@@ -234,10 +251,15 @@
 <body>
     <!-- A minimal structure for the ScreenAdapter defined in browser/screen.js -->
     <div id="progress"></div>
-    <div id="terminal"></div>
+    <div id="terminal" style="white-space: pre; font: 14 monospace; line-height: 14"></div>
+
+    <!-- <div id="screen_container" style="display:none;">
+        <div></div>
+        <canvas></canvas>
+    </div> -->
 
     <div id="screen_container" style="display: none; width: 100%;" contenteditable="true">
-        <div id="text_container" style="white-space: pre; font: 18px monospace; line-height: 18px"></div>
+        <div id="text_container" style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
         <canvas style="display: none;"></canvas>
     </div>
 
@@ -255,7 +277,7 @@
         <button onclick="emulator.restore()">Restore from IndexedDB</button>&nbsp;&nbsp;
         <button onclick="emulator.clearState()">Clear IndexedDB</button>
         <br />
-        <input type="text" id="fontsize" value="18" min="4" max="40" style="width: 25px">&nbsp;&nbsp;<button
+        <input type="text" id="fontsize" value="14" min="4" max="40" style="width: 25px">&nbsp;&nbsp;<button
             onclick="updateFontSize()">Update font size</button>
         <br />
         memory (mb): <select name="memorysize" id="memorysize">
