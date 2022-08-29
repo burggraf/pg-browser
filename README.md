@@ -19,6 +19,7 @@ Modify Dockerfile line 4:
 `ARG BUILD_ROOT_RELEASE=2022.05.1`
 
 ```sh
+docker build -t buildroot .
 docker run \
     --rm \
     --name build-v86 \
