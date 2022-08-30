@@ -6,7 +6,7 @@
     <meta name="viewport"
         content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>PostgreSQL</title><!-- not BASIC! -->
-    
+
     <!-- <link rel="stylesheet" href="https://unpkg.com/xterm@4.19.0/css/xterm.css" /> -->
     <script src="https://unpkg.com/xterm@4.19.0/lib/xterm.js"></script>
 
@@ -20,7 +20,7 @@
             conflicAction: "replace"
         });
         const config = {
-            font_size: 14,
+            font_size: 15,
             memory_size: 96,
             vga_memory_size: 2,
             initial_state: {
@@ -54,6 +54,7 @@
                 autostart: true,
                 disable_speaker: true,
                 network_relay_url: "wss://relay.widgetry.org/",
+                // preserve_mac_from_state_image: true,
             });
             console.log('*** emulator loaded', emulator);
             var state;
@@ -104,6 +105,26 @@
                 this.blur();
             };
 
+            document.getElementById("upload_files").onchange = function (e) {
+                console.log('upload_files', e, e.target.files.length);
+                var files = e.target.files;
+                for (var i = 0; i < files.length; i++) {
+                    var reader = new FileReader();
+                    reader.onload = function (file) {
+                        return function (e) {
+                            var data = (new TextEncoder('UTF-8')).encode(e.target.result);
+                            // console.log('emulator', emulator);
+                            // console.log('emulator.create_file', emulator.create_file);
+                            emulator.create_file("/user/" + file.name, data)
+                            .then((result) => {console.log("uploaded " + file.name, 'result', result)})
+                            .catch((error) => {console.log("upload " + file.name, 'upload error', error)});
+                        }
+                    }(files[i]);
+                    reader.readAsText(files[i]);
+                }
+            };
+
+
             V86Starter.prototype.keyboard_send_text = function (string) {
                 for (var i = 0; i < string.length; i++) {
                     this.keyboard_adapter.simulate_char(string[i]);
@@ -127,13 +148,21 @@
                 console.log('restoring...');
                 storage.get("state").then(function (state) {
                     if (state) {
+                        const byteLength = state.byteLength;
+                        // format byteLength with commas
+                        var size = byteLength.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                        console.log('state is', size, 'bytes');
                         emulator.stop();
                         emulator.restore_state(state).then(function (result) {
                             console.log('restore result', result);
-                            emulator.run();
+                            emulator.run();                            
+                            // var term=new Terminal();
+                            // term.open(document.getElementById("terminal"));
                         }).catch(function (err) {
                             console.log('restore error', err);
                         });
+                    } else {
+                        console.log('no state to restore');
                     }
                 }).catch(function (err) {
                     console.log('restore error', err);
@@ -187,23 +216,24 @@
             setTimeout(function () {
                 emulator.restore(); // restore from indexedDB storage
                 console.log('*** done restoring emulator', emulator);
-            }, 500);
+            }, 1000);
 
         }
 
         function updateFontSize() {
-
+            console.log('FONT SIZE WAS', emulator.serial_adapter.term.options.fontSize);
             //emulator.screen_adapter.set_size_text(document.getElementById("font_size").value, document.getElementById("font_size").value);
             try {
-                config.font_size = parseInt(document.getElementById("fontsize").value,10) || 14;
+                config.font_size = parseInt(document.getElementById("fontsize").value, 10) || 14;
                 if (config.font_size < 4 || config.font_size > 90) {
-                    config.font_size = 14;
+                    config.font_size = 15;
                 }
             } catch (err) {
                 console.log('error parsing font size', err);
-                config.font_size = 14;
+                config.font_size = 15;
             }
             emulator.serial_adapter.term.options.fontSize = config.font_size;
+            console.log('emulator.serial_adapter.term', emulator.serial_adapter.term);
         }
 
         function updateMemorySize() {
@@ -228,7 +258,7 @@
                 console.log('updateMemorySize error', e);
             }
         }
-
+ 
         // function sendText() {
         //     let text = document.getElementById("textarea").value;
         //     console.log('text is', text);
@@ -251,17 +281,19 @@
 <body>
     <!-- A minimal structure for the ScreenAdapter defined in browser/screen.js -->
     <div id="progress"></div>
-    <div id="terminal" style="white-space: pre; font: 14 monospace; line-height: 14"></div>
+    <!-- <div id="terminal" style="white-space: pre; font: 14 monospace; line-height: 14"></div> -->
+    <div id="terminal"></div>
 
-    <!-- <div id="screen_container" style="display:none;">
+    <div id="screen_container" style="display:none;">
         <div></div>
         <canvas></canvas>
-    </div> -->
+    </div>
 
-    <div id="screen_container" style="display: none; width: 100%;" contenteditable="true">
+    <!-- <div id="screen_container" style="display: none; width: 100%;" contenteditable="true">
         <div id="text_container" style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
         <canvas style="display: none;"></canvas>
-    </div>
+    </div> -->
+
 
     <div style="clear: both;">
         <!-- <input id="save_restore" type="button" value="Save state"> -->
@@ -277,7 +309,7 @@
         <button onclick="emulator.restore()">Restore from IndexedDB</button>&nbsp;&nbsp;
         <button onclick="emulator.clearState()">Clear IndexedDB</button>
         <br />
-        <input type="text" id="fontsize" value="14" min="4" max="40" style="width: 25px">&nbsp;&nbsp;<button
+        <input type="text" id="fontsize" value="15" min="4" max="40" style="width: 25px">&nbsp;&nbsp;<button
             onclick="updateFontSize()">Update font size</button>
         <br />
         memory (mb): <select name="memorysize" id="memorysize">
@@ -293,6 +325,14 @@
             onclick="updateMemorySize()">Reset</button>
         &nbsp;&nbsp;<input type="checkbox" id="fullboot" name="fullboot" value="true"> Full Boot
         <br />
+        Send files to emulator
+        <button style="display:inline;width:160px; height:20px;"
+            onclick="document.getElementById('upload_files').click()">
+            Send files to emulator
+        </button>
+        <input type='file' id="upload_files" style="display:none" multiple>
+
+
         <!-- <textarea id="textarea" cols="55" rows="10" style="width: 100%"></textarea><br>
         <button onclick="sendText()">Send Text</button> -->
     </div>
