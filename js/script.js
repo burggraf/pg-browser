@@ -139,7 +139,12 @@ function setup_emulator() {
                 emulator.stop();
                 emulator.restore_state(state).then(function (result) {
                     console.log('restore result', result);
-                    emulator.run();                            
+                    emulator.run();   
+                    emulator.serial_adapter.term.focus();
+                    // }, 1000);
+                    console.log('emulator', emulator);
+            
+                    
                     // var term=new Terminal();
                     // term.open(document.getElementById("terminal"));
                 }).catch(function (err) {
@@ -163,14 +168,33 @@ function setup_emulator() {
         console.log('*** emulator ready', emulator);
         console.log('********************************************************');
         setTimeout(() => {
-            emulator.serial0_send('clear\n');
-            emulator.serial0_send('psql -U postgres\n');
-            emulator.serial_adapter.term.focus();
+            // emulator.serial0_send('clear\n');
+            // emulator.serial0_send('psql -U postgres\n');
+            emulator.serial0_send('\n');
+            if (emulator.serial_adapter && emulator.serial_adapter.term) {
+                emulator.serial_adapter.term.focus();
+            }
         }, 500);
     });
-    // emulator.add_listener("serial0-output-char", async function(chr) {
-    //     console.log('serial0-output-char', chr);
-    // });
+    const fullboot = document.getElementById("fullboot").checked;
+    let booted = false;
+    if (fullboot) {
+        let serialBootBuffer = '';
+        const my_listener = emulator.add_listener("serial0-output-char", async function(chr) {
+            if (booted) return;
+            serialBootBuffer += chr;
+            // console.log('serial0-output-char', chr);
+            console.log('serialBootBuffer', serialBootBuffer);
+            if (serialBootBuffer.endsWith('/ #')) {
+                // done booting
+                serialBootBuffer = '';
+                booted = true;
+                console.log('done booting');
+                document.getElementById("screen_container").style.display = "none";
+                emulator.remove_listener("serial0-output-char", my_listener);
+            }
+        });    
+    }
     emulator.add_listener("download-progress", function (e) {
         console.log('*** download progress', e);
         const el = document.getElementById("progress");
@@ -200,8 +224,7 @@ window.onload = function () {
     setTimeout(function () {
         emulator.restore(); // restore from indexedDB storage
         console.log('*** done restoring emulator', emulator);
-    }, 1000);
-
+    }, 500);
 }
 
 function updateFontSize() {
@@ -218,6 +241,13 @@ function updateFontSize() {
     }
     emulator.serial_adapter.term.options.fontSize = config.font_size;
     console.log('emulator.serial_adapter.term', emulator.serial_adapter.term);
+    console.log('emulator.serial_adapter.term.buffer', emulator.serial_adapter.term.buffer);
+    console.log(document.getElementById("terminal"));
+
+    // var term=new Terminal();
+    // // Terminal.applyAddon(fullscreen);
+    // term.open(document.getElementById("terminal"));
+    // console.log('term', term);
 }
 
 function updateMemorySize() {
@@ -231,7 +261,7 @@ function updateMemorySize() {
             document.getElementById("memorysize").value = config.memory_size;
         }
         if (fullboot) {
-            config.initial_state = null;
+            config.initial_state = {};
         } else {
             config.initial_state.url = "../images/pg-browser-state-" + config.memory_size + ".bin.zst";
         }
