@@ -172,9 +172,8 @@ function setup_emulator() {
             // emulator.serial0_send('clear\n');
             // emulator.serial0_send('psql -U postgres\n');
             emulator.serial0_send('\n');
-            if (emulator.serial_adapter && emulator.serial_adapter.term) {
-                emulator.serial_adapter.term.focus();
-            }
+            emulator.serial_adapter.term.element.children[0].style.width = 0;
+            emulator.serial_adapter.term.focus();
         }, 500);
     });
     const fullboot = document.getElementById("fullboot").checked;
@@ -241,9 +240,11 @@ function updateFontSize() {
         config.font_size = 15;
     }
     emulator.serial_adapter.term.options.fontSize = config.font_size;
-    console.log('emulator.serial_adapter.term', emulator.serial_adapter.term);
-    console.log('emulator.serial_adapter.term.buffer', emulator.serial_adapter.term.buffer);
-    console.log(document.getElementById("terminal"));
+    // console.log('emulator.serial_adapter.term', emulator.serial_adapter.term);
+    // console.log('emulator.serial_adapter.term.buffer', emulator.serial_adapter.term.buffer);
+    // console.log(document.getElementById("terminal"));
+    // console.log('emulator.serial_adapter.term.element.lastChild', emulator.serial_adapter.term.element.lastChild);
+    emulator.serial_adapter.term.element.children[0].style.width = 0;
 
     // var term=new Terminal();
     // // Terminal.applyAddon(fullscreen);
