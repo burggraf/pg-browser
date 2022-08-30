@@ -143,7 +143,8 @@ function setup_emulator() {
                     emulator.serial_adapter.term.focus();
                     // }, 1000);
                     console.log('emulator', emulator);
-            
+                    // document.getElementById("screen_container").style.display = "none";
+
                     
                     // var term=new Terminal();
                     // term.open(document.getElementById("terminal"));
@@ -266,7 +267,9 @@ function updateMemorySize() {
             config.initial_state.url = "../images/pg-browser-state-" + config.memory_size + ".bin.zst";
         }
         emulator.stop();
-        document.getElementById("screen_container").style.display = "block";
+        if (fullboot) {
+            document.getElementById("screen_container").style.display = "block";
+        }
         setup_emulator();
     } catch (e) {
         console.log('updateMemorySize error', e);
