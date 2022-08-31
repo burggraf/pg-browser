@@ -3,7 +3,7 @@ const storage = idbStorage.createIDBStorage({
     name: "state-storage",
     conflicAction: "replace"
 });
-const config = {
+let config = {
     font_size: 15,
     memory_size: 128,
     vga_memory_size: 2,
@@ -42,23 +42,6 @@ function setup_emulator() {
     });
     console.log('*** emulator loaded', emulator);
     var state;
-
-    // document.getElementById("save_restore").onclick = async function () {
-    //     var button = this;
-
-    //     if (state) {
-    //         button.value = "Save state";
-    //         await emulator.restore_state(state);
-    //         state = undefined;
-    //     } else {
-    //         const new_state = await emulator.save_state();
-    //         console.log("Saved state of " + new_state.byteLength + " bytes");
-    //         button.value = "Restore state";
-    //         state = new_state;
-    //     }
-
-    //     button.blur();
-    // };
 
     document.getElementById("save_file").onclick = async function () {
         const new_state = await emulator.save_state();
@@ -117,20 +100,20 @@ function setup_emulator() {
 
 
     emulator.clearState = async function () {
-        await storage.delete('state');
+        await storage.delete('state-' + config.memory_size);
     }
     emulator.save = async function () {
         console.log('saving...');
         await emulator.clearState();
         const state = await emulator.save_state();
         const meta = {};
-        const result = await storage.set('state', state, meta);
+        const result = await storage.set('state-' + config.memory_size, state, meta);
         console.log('save result', result);
     }
 
     emulator.restore = async function () {
         console.log('restoring...');
-        storage.get("state").then(function (state) {
+        storage.get('state-' + config.memory_size).then(function (state) {
             if (state) {
                 const byteLength = state.byteLength;
                 // format byteLength with commas
@@ -217,14 +200,26 @@ function setup_emulator() {
     emulator.add_listener("9p-attach", function () {
         console.log('*** 9p-attach');
     });
-
-}
-window.onload = function () {
-    setup_emulator();
     setTimeout(function () {
+        updateFontSize();
         emulator.restore(); // restore from indexedDB storage
         console.log('*** done restoring emulator', emulator);
     }, 500);
+}
+window.onload = function () {
+    const saved_config = localStorage.getItem('config');
+    try {
+        if (saved_config) {
+            config = JSON.parse(saved_config);
+            console.log('config loaded from localStorage', config);
+        }
+    } catch (err) {
+        console.error('error restoring config from localStorage', err);
+    }
+    let memorysizeElement = document.getElementById("memorysize");
+    memorysizeElement.value = config.memory_size;
+    document.getElementById("fontsize").value = config.font_size;
+    setup_emulator();
 }
 
 function updateFontSize() {
@@ -240,16 +235,12 @@ function updateFontSize() {
         config.font_size = 15;
     }
     emulator.serial_adapter.term.options.fontSize = config.font_size;
-    // console.log('emulator.serial_adapter.term', emulator.serial_adapter.term);
-    // console.log('emulator.serial_adapter.term.buffer', emulator.serial_adapter.term.buffer);
-    // console.log(document.getElementById("terminal"));
-    // console.log('emulator.serial_adapter.term.element.lastChild', emulator.serial_adapter.term.element.lastChild);
-    emulator.serial_adapter.term.element.children[0].style.width = 0;
-
-    // var term=new Terminal();
-    // // Terminal.applyAddon(fullscreen);
-    // term.open(document.getElementById("terminal"));
-    // console.log('term', term);
+    if (emulator.serial_adapter.term.element && emulator.serial_adapter.term.element.children[0]) {
+        emulator.serial_adapter.term.element.children[0].style.width = 0;
+        localStorage.setItem('config', JSON.stringify(config));    
+    } else {
+        console.log('terminal not initialized, cannot update find size yet');
+    }
 }
 
 function updateMemorySize() {
@@ -272,6 +263,7 @@ function updateMemorySize() {
             document.getElementById("screen_container").style.display = "block";
         }
         setup_emulator();
+        localStorage.setItem('config', JSON.stringify(config));
     } catch (e) {
         console.log('updateMemorySize error', e);
     }
