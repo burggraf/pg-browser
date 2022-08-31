@@ -11,7 +11,7 @@
     <script src="https://unpkg.com/xterm@4.19.0/lib/xterm.js"></script>
 
     <link rel="stylesheet" href="v86.css">
-    <script src="./js/libv86.js"></script>
+    <script src="./js/libv86-no-jit.js"></script>
     <script src="./js/idb-storage.min.js"></script>
     <script src="./js/script.js"></script>
  </head>
@@ -51,7 +51,6 @@
             onclick="updateFontSize()">Update font size</button>
         <br />
         memory (mb): <select name="memorysize" id="memorysize">
-            <option value="96">96</option>
             <option value="128">128</option>
             <option value="196">196</option>
             <option value="256">256</option>

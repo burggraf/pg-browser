@@ -5,10 +5,10 @@ const storage = idbStorage.createIDBStorage({
 });
 const config = {
     font_size: 15,
-    memory_size: 96,
+    memory_size: 128,
     vga_memory_size: 2,
     initial_state: {
-        url: "../images/pg-browser-state-96.bin.zst"
+        url: "../images/pg-browser-state-128.bin.zst"
     },
 }
 var emulator;
@@ -18,7 +18,7 @@ function setup_emulator() {
     console.log('loading emualtor');
     document.getElementById("terminal").innerHTML = "";
     emulator = window.emulator = new V86Starter({
-        wasm_path: "../images/v86.wasm",
+        wasm_path: "../images/v86-no-jit.wasm",
         memory_size: config.memory_size * 1024 * 1024,
         vga_memory_size: config.vga_memory_size * 1024 * 1024,
         screen_container: document.getElementById("screen_container"),
