@@ -32,6 +32,7 @@ function setup_emulator() {
         cdrom: {
             url: "../images/v86-linux.iso",
         },
+        //cmdline: "root=host9p rootfstype=9p rootflags=trans=virtio",
         // fastboot: true,
         // network_relay_url: "ws://localhost:8080/",
         initial_state: config.initial_state,
@@ -62,6 +63,13 @@ function setup_emulator() {
             filereader.onload = async function (e) {
                 await emulator.restore_state(e.target.result);
                 emulator.run();
+                emulator.serial_adapter.term.focus();
+                
+                emulator.serial0_send('\n');
+                emulator.serial0_send('/etc/init.d/S40network stop\n');
+                emulator.serial0_send('/etc/init.d/S40network start\n');
+
+
             };
 
             filereader.readAsArrayBuffer(this.files[0]);
@@ -82,7 +90,17 @@ function setup_emulator() {
                     var data = (new TextEncoder('UTF-8')).encode(e.target.result);
                     // console.log('emulator', emulator);
                     // console.log('emulator.create_file', emulator.create_file);
-                    emulator.create_file("/user/" + file.name, data)
+                    //emulator.create_file("/user/" + file.name, data)
+                    emulator.create_file("/mnt/file.txt", data)
+                    .then((result) => {console.log("uploaded " + file.name, 'result', result)})
+                    .catch((error) => {console.log("upload " + file.name, 'upload error', error)});
+                    emulator.create_file("file.txt", data)
+                    .then((result) => {console.log("uploaded " + file.name, 'result', result)})
+                    .catch((error) => {console.log("upload " + file.name, 'upload error', error)});
+                    emulator.create_file("/user/file.txt", data)
+                    .then((result) => {console.log("uploaded " + file.name, 'result', result)})
+                    .catch((error) => {console.log("upload " + file.name, 'upload error', error)});
+                    emulator.create_file("/mnt/" + file.name, data)
                     .then((result) => {console.log("uploaded " + file.name, 'result', result)})
                     .catch((error) => {console.log("upload " + file.name, 'upload error', error)});
                 }
@@ -124,10 +142,12 @@ function setup_emulator() {
                     console.log('restore result', result);
                     emulator.run();   
                     emulator.serial_adapter.term.focus();
-                    // }, 1000);
-                    console.log('emulator', emulator);
-                    // document.getElementById("screen_container").style.display = "none";
+                    
+                    emulator.serial0_send('\n');
+                    emulator.serial0_send('/etc/init.d/S40network stop\n');
+                    emulator.serial0_send('/etc/init.d/S40network start\n');
 
+                    console.log('emulator', emulator);
                     
                     // var term=new Terminal();
                     // term.open(document.getElementById("terminal"));
@@ -152,12 +172,13 @@ function setup_emulator() {
         console.log('*** emulator ready', emulator);
         console.log('********************************************************');
         setTimeout(() => {
-            // emulator.serial0_send('clear\n');
+            // emulator.serial0_send('\n');
+            // emulator.serial0_send('udhcpc\n');
+            // emulator.serial0_send('reset\n');
             // emulator.serial0_send('psql -U postgres\n');
-            emulator.serial0_send('\n');
             emulator.serial_adapter.term.element.children[0].style.width = 0;
             emulator.serial_adapter.term.focus();
-        }, 500);
+        }, 2000);
     });
     const fullboot = document.getElementById("fullboot").checked;
     let booted = false;
@@ -168,8 +189,8 @@ function setup_emulator() {
             serialBootBuffer += chr;
             // console.log('serial0-output-char', chr);
             console.log('serialBootBuffer', serialBootBuffer);
-            if (serialBootBuffer.endsWith('/ #')) {
-                // done booting
+            if (serialBootBuffer.endsWith('# ')) {
+                    // done booting
                 serialBootBuffer = '';
                 booted = true;
                 console.log('done booting');
@@ -202,8 +223,11 @@ function setup_emulator() {
     });
     setTimeout(function () {
         updateFontSize();
-        emulator.restore(); // restore from indexedDB storage
-        console.log('*** done restoring emulator', emulator);
+        const fullboot = document.getElementById("fullboot").checked;
+        if (!fullboot) {
+            emulator.restore(); // restore from indexedDB storage
+            console.log('*** done restoring emulator', emulator);    
+        }
     }, 500);
 }
 window.onload = function () {
